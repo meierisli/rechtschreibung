@@ -17,7 +17,7 @@
     .small { font-size: 12px; color: #555; }
 
     .sentence { font-size: 22px; line-height: 1.75; white-space: normal; overflow-wrap: anywhere; 
-      padding-bottom: 56px;
+      padding-bottom: 12px;
       }
 
     
@@ -129,8 +129,8 @@ const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", 
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.3.2"; // bump when you update
-const BUILD_TIME = "2025-12-30T11:39:33Z";
+const APP_VERSION = "v2.3.3"; // bump when you update
+const BUILD_TIME = "2025-12-30T11:53:09Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
@@ -305,18 +305,23 @@ function tokenize(sentence) {
 function findCandidatesInWord(word) {
   const low = word.toLowerCase();
   const candidates = [];
+  const covered = new Set();
 
-  // digraphs first
+  // digraphs first (mark covered indices to avoid overlapping single-letter candidates)
   for (let i = 0; i < low.length - 1; i++) {
     const two = low.slice(i, i+2);
     const d = DIGRAPHS.find(x => x.s === two);
     if (d) {
       candidates.push({ start:i, len:2, cat:d.cat, answer:d.answer, options:d.options });
+      covered.add(i);
+      covered.add(i+1);
       i++;
     }
   }
-  // singles
+
+  // singles (skip indices already covered by a digraph)
   for (let i = 0; i < low.length; i++) {
+    if (covered.has(i)) continue;
     const one = low[i];
     const s = SINGLE.find(x => x.s === one);
     if (s) candidates.push({ start:i, len:1, cat:s.cat, answer:s.answer, options:s.options });
@@ -324,6 +329,7 @@ function findCandidatesInWord(word) {
 
   if (!candidates.length) return [];
 
+  // Nur wenn keine andere Stelle möglich ist, darf der erste Buchstabe verwendet werden
   const nonStart = candidates.filter(c => c.start > 0);
   return nonStart.length ? nonStart : candidates;
 }
@@ -437,8 +443,28 @@ function resetStatsAndProgress() {
 }
 
 function pickNextSentence() {
+  // Pool füllen
   if (!DATA._remaining || DATA._remaining.length === 0) DATA._remaining = shuffleInPlace([...DATA.sentences]);
-  return DATA._remaining.pop();
+
+  // Auswahl mit leichter Gewichtung: Sätze bevorzugen, deren Kategorien bisher seltener abgefragt wurden
+  const sampleN = Math.min(30, DATA._remaining.length);
+  let bestIdx = DATA._remaining.length - 1;
+  let bestScore = Infinity;
+
+  for (let k = 0; k < sampleN; k++) {
+    const idx = DATA._remaining.length - 1 - Math.floor(Math.random() * sampleN);
+    const s = DATA._remaining[idx];
+    let score = 0;
+    for (const node of s.nodes) {
+      if (node.t === "gap") score += (stats && stats.perCat && stats.perCat[node.category] ? stats.perCat[node.category].attempts : 0);
+    }
+    // etwas Zufall, damit es nicht deterministisch wird
+    score += Math.random() * 0.25;
+    if (score < bestScore) { bestScore = score; bestIdx = idx; }
+  }
+
+  const chosen = DATA._remaining.splice(bestIdx, 1)[0];
+  return chosen;
 }
 
 function blankHtml(len) { return "&nbsp;".repeat(Math.max(2, len)); }
