@@ -162,6 +162,22 @@ const CATEGORIES = [
   { key: "TD",  label: "t / d",  options: ["t","d"] }
 ];
 
+var MIN_WORD_LEN = 5;
+// Wörter, die nicht für Abfragen verwendet werden sollen
+var STOP_WORDS = new Set([
+  "der","die","das","ein","eine","einer","einem","einen","eines",
+  "ich","du","er","sie","es","wir","ihr","sie",
+  "mein","meine","meiner","meinem","meinen",
+  "dein","deine","seiner","seine","ihre","unser","unsere",
+  "und","oder","aber","denn","auch","nur","noch","schon",
+  "in","im","am","auf","an","mit","von","für","bei","über","unter","nach","vor"
+]);
+
+
+
+
+
+
 function shuffleInPlace(a) {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -265,19 +281,6 @@ const SINGLE = [
   { s: "t", cat: "TD",  answer: "t", options: ["t","d"] },
   { s: "d", cat: "TD",  answer: "d", options: ["t","d"] },
 ];
-
-const MIN_WORD_LEN = 5;
-// Wörter, die nicht für Abfragen verwendet werden sollen
-const STOP_WORDS = new Set([
-  "der","die","das","ein","eine","einer","einem","einen","eines",
-  "ich","du","er","sie","es","wir","ihr","sie",
-  "mein","meine","meiner","meinem","meinen",
-  "dein","deine","seiner","seine","ihre","unser","unsere",
-  "und","oder","aber","denn","auch","nur","noch","schon",
-  "in","im","am","auf","an","mit","von","für","bei","über","unter","nach","vor"
-]);
-
-
 
 function applyCase(opt, origSpan) {
   if (origSpan && origSpan[0] === origSpan[0].toUpperCase()) {
