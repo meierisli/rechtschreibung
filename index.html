@@ -66,7 +66,9 @@
   z-index:5;
 }
 
-button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; }
+button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; 
+  white-space: nowrap;
+}
     button.choice:disabled { cursor: not-allowed; opacity: .65; }
     button.choice.correct { background: #e7f8ea; border-color: #2e7d32; color: #1b5e20; }
     button.choice.wrong { background: #fdeaea; border-color: #c62828; color: #8e0000; }
@@ -142,8 +144,8 @@ const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", 
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.3.7"; // bump when you update
-const BUILD_TIME = "2025-12-30T13:13:02Z";
+const APP_VERSION = "v2.4.0"; // bump when you update
+const BUILD_TIME = "2025-12-30T13:21:52Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
@@ -442,6 +444,7 @@ let gapsMeta = [];
 let solved = [];
 let correctCounted = [];
 let hadWrong = [];
+let sentenceHadWrong = false;
 let countedAttempt = [];
 
 function resetStatsAndProgress() {
@@ -458,10 +461,9 @@ function resetStatsAndProgress() {
 }
 
 function pickNextSentence() {
-  // Pool füllen
-  if (!DATA._remaining || DATA._remaining.length === 0) DATA._remaining = shuffleInPlace([...DATA.sentences]);
+  if (!DATA._remaining) DATA._remaining = shuffleInPlace([...DATA.sentences]);
+  if (DATA._remaining.length === 0) return null;
 
-  // Auswahl mit leichter Gewichtung: Sätze bevorzugen, deren Kategorien bisher seltener abgefragt wurden
   const sampleN = Math.min(30, DATA._remaining.length);
   let bestIdx = DATA._remaining.length - 1;
   let bestScore = Infinity;
@@ -473,7 +475,6 @@ function pickNextSentence() {
     for (const node of s.nodes) {
       if (node.t === "gap") score += (stats && stats.perCat && stats.perCat[node.category] ? stats.perCat[node.category].attempts : 0);
     }
-    // etwas Zufall, damit es nicht deterministisch wird
     score += Math.random() * 0.25;
     if (score < bestScore) { bestScore = score; bestIdx = idx; }
   }
@@ -505,6 +506,7 @@ function renderSentence() {
   solved = Array(gapsMeta.length).fill(false);
   correctCounted = Array(gapsMeta.length).fill(false);
   hadWrong = Array(gapsMeta.length).fill(false);
+  sentenceHadWrong = false;
   countedAttempt = Array(gapsMeta.length).fill(false);
   nextBtn.disabled = true;
 
@@ -516,6 +518,24 @@ function renderSentence() {
   });
 
   updateStatsUI();
+}
+
+function goNext() {
+  nextBtn.disabled = true;
+  const msg = document.getElementById("completeMsg");
+  if (msg) msg.style.display = "none";
+
+  const next = pickNextSentence();
+  if (!next) {
+    sentenceEl.innerHTML = "";
+    if (msg) msg.style.display = "block";
+    progressPill.textContent = `Fertig`;
+    nextBtn.disabled = true;
+    return;
+  }
+  current = next;
+  progressPill.textContent = `Satz ${++progressIndex}`;
+  renderSentence();
 }
 
 function onChoose(gapIndex, chosen, btn) {
@@ -554,6 +574,7 @@ function onChoose(gapIndex, chosen, btn) {
     choicesEl.querySelectorAll("button.choice").forEach(b => b.disabled = true);
   } else {
     hadWrong[gapIndex] = true;
+    sentenceHadWrong = true;
     btn.classList.add("wrong");
   }
 
@@ -602,8 +623,28 @@ function switchToSet(id) {
   const s = allSets.find(x => x.id === id);
   if (!s) return;
   currentSetId = id;
+
+  // DATA enthält nodes für alle Sätze
   DATA = { categories: CATEGORIES, sentences: s.sentences };
+
   resetStatsAndProgress();
+  progressIndex = 0;
+  nextBtn.disabled = true;
+
+  const msg = document.getElementById("completeMsg");
+  if (msg) msg.style.display = "none";
+
+  DATA._remaining = shuffleInPlace([...DATA.sentences]);
+
+  const first = pickNextSentence();
+  if (!first) {
+    sentenceEl.innerHTML = "";
+    if (msg) msg.style.display = "block";
+    progressPill.textContent = `Fertig`;
+    return;
+  }
+  current = first;
+  progressPill.textContent = `Satz ${++progressIndex}`;
   renderSentence();
 }
 
