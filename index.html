@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rechtschreibung üben</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; 
+      overflow: visible;
+    }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .spacer { flex: 1 1 auto; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#f3f3f3; font-size:12px; }
+    .small { font-size: 12px; color: #555; }
+
+    .sentence { font-size: 22px; line-height: 1.75; white-space: normal; overflow-wrap: anywhere; 
+      padding-bottom: 56px;
+      }
+
+    
+.gapWrap {
+  display: inline;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.blank {
+  display: inline;
+  border-bottom: 3px solid #111;
+  padding: 0;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.blank.done { border-bottom-color: #777; }
+
+.choices {
+  z-index: 5;
+
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 1.8em;
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+    button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; }
+    button.choice:disabled { cursor: not-allowed; opacity: .65; }
+    button.choice.correct { background: #e7f8ea; border-color: #2e7d32; color: #1b5e20; }
+    button.choice.wrong { background: #fdeaea; border-color: #c62828; color: #8e0000; }
+
+    button.primary { padding: 10px 14px; border-radius: 10px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; font-size: 16px; }
+    button.primary:disabled { opacity: .4; cursor: not-allowed; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px 6px; text-align: left; }
+    th { background: #fafafa; }
+  </style>
+</head>
+<body>
+  <h1>Rechtschreibung üben</h1>
+  <div class="small">Grund-Set mit 200 Sätzen. Du kannst zusätzliche Sets als .txt laden (jede Zeile ein Satz) und jederzeit wechseln.</div>
+
+  <div class="card">
+    
+      <div class="row">
+      <div><span class="pill" id="progressPill">Satz 0</span></div>
+      <div class="spacer"></div>
+      <button class="primary" id="nextBtn" disabled>Weiter</button>
+    </div>
+
+    <div style="height:10px"></div>
+    <div class="sentence" id="sentence"></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div><strong>Statistik</strong></div>
+      <div class="spacer"></div>
+      <div class="row" style="gap:10px;align-items:center;"><div id="ampel" style="width:14px;height:14px;border-radius:50%;background:#ddd;border:1px solid #bbb;"></div><div class="small" id="overallStat"></div></div>
+    </div>
+    <div style="height:8px"></div>
+    <table>
+      <thead><tr><th>Kombination</th><th>Versuche</th><th>Richtig</th><th>Quote</th></tr></thead>
+      <tbody id="statsBody"></tbody>
+    </table>
+  </div>
+
+
+  <div class="card">
+    <div class="row">
+      <div><strong>Sets</strong></div>
+      <div class="spacer"></div>
+      <div class="row" style="gap:10px;">
+        <label class="small" for="setSelect">Set:</label>
+        <select id="setSelect" style="padding:8px 10px;border-radius:10px;border:1px solid #bbb;font-size:14px;max-width:420px;"></select>
+        <button class="primary" id="loadSetBtn" style="background:#fff;color:#111;border:1px solid #111;">Set laden…</button>
+        <input id="fileInput" type="file" accept=".txt,text/plain" style="display:none" />
+      </div>
+    </div>
+    <div class="small" style="margin-top:8px;">
+      Neue Sets: .txt-Datei wählen, jede Zeile ein Satz. Geladene Sets bleiben im Browser gespeichert und sind künftig auswählbar.
+    </div>
+  </div>
+
+<script>
+const BASE_DATA = {"version": 12, "categories": [{"key": "KCK", "label": "k / ck", "options": ["k", "ck"]}, {"key": "IEI", "label": "ie / i", "options": ["ie", "i"]}, {"key": "TZZ", "label": "tz / z", "options": ["tz", "z"]}, {"key": "PB", "label": "p / b", "options": ["p", "b"]}, {"key": "TD", "label": "t / d", "options": ["t", "d"]}], "sentences": [{"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Rucksa"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": " und Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Rucksa"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": " und Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Ru"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "sack und kontrolliere danach Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f."}]}, {"nodes": [{"t": "text", "v": "Sprich Rucksa"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": " langsam aus und schreibe danach Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Ru"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "sack mit Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Ru"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "sack und Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Rucksa"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": " ein und prüfe anschliessend Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Ru"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "sack und schreibe danach Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Rucksa"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": " und Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Ru"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "sack und Br"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "f noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en und Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en und Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en und kontrolliere danach Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l."}]}, {"nodes": [{"t": "text", "v": "Sprich So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en langsam aus und schreibe danach Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en mit Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en und Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en ein und prüfe anschliessend Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en und schreibe danach Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en und Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du So"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "en und Sp"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er und kontrolliere danach "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot."}]}, {"nodes": [{"t": "text", "v": "Sprich Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er langsam aus und schreibe danach "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er mit "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er ein und prüfe anschliessend "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er und schreibe danach "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Zu"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "er und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "rot noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und kontrolliere danach Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier."}]}, {"nodes": [{"t": "text", "v": "Sprich Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e langsam aus und schreibe danach Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e mit Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e ein und prüfe anschliessend Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und schreibe danach Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Ja"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pa"}, {"t": "gap", "category": "PB", "answer": "p", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": "ier noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und kontrolliere danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch."}]}, {"nodes": [{"t": "text", "v": "Sprich De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e langsam aus und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e mit "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e ein und prüfe anschliessend "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du De"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "isch noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und kontrolliere danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel."}]}, {"nodes": [{"t": "text", "v": "Sprich E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e langsam aus und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e mit "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e ein und prüfe anschliessend "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du E"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "afel noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen und Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen und Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen und kontrolliere danach Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e."}]}, {"nodes": [{"t": "text", "v": "Sprich Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen langsam aus und schreibe danach Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen mit Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen und Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen ein und prüfe anschliessend Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen und schreibe danach Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen und Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Pä"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "chen und Ka"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "e noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und kontrolliere danach Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Sprich Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e langsam aus und schreibe danach Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e mit Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": ", bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e ein und prüfe anschliessend Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und schreibe danach Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Schne"}, {"t": "gap", "category": "KCK", "answer": "ck", "options": ["k", "ck"], "blankLen": 2}, {"t": "text", "v": "e und Pla"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und kontrolliere danach "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket."}]}, {"nodes": [{"t": "text", "v": "Sprich Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l langsam aus und schreibe danach "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l mit "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l ein und prüfe anschliessend "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und schreibe danach "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Z"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "l und "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "aket noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und kontrolliere danach "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all."}]}, {"nodes": [{"t": "text", "v": "Sprich B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne langsam aus und schreibe danach "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne mit "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne ein und prüfe anschliessend "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und schreibe danach "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du B"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "all noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel und kontrolliere danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse."}]}, {"nodes": [{"t": "text", "v": "Sprich St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel langsam aus und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel mit "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel ein und prüfe anschliessend "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du St"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "fel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "asse noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und kontrolliere danach "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose."}]}, {"nodes": [{"t": "text", "v": "Sprich Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne langsam aus und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne mit "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne ein und prüfe anschliessend "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Sch"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "ne und "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ose noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re und Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re und Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re und kontrolliere danach Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Sprich T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re langsam aus und schreibe danach Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re mit Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re und Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": ", bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re ein und prüfe anschliessend Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re und schreibe danach Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re und Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du T"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": "re und Scha"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " und Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " und Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " und kontrolliere danach Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Sprich Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " langsam aus und schreibe danach Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " mit Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " und Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": ", bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " ein und prüfe anschliessend Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " und schreibe danach Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " und Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Kn"}, {"t": "gap", "category": "IEI", "answer": "ie", "options": ["ie", "i"], "blankLen": 2}, {"t": "text", "v": " und Bli"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift und kontrolliere danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf."}]}, {"nodes": [{"t": "text", "v": "Sprich "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift langsam aus und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift mit "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift ein und prüfe anschliessend "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "leistift und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "opf noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel und kontrolliere danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller."}]}, {"nodes": [{"t": "text", "v": "Sprich "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel langsam aus und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel mit "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel ein und prüfe anschliessend "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel und schreibe danach "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du "}, {"t": "gap", "category": "PB", "answer": "P", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "insel und "}, {"t": "gap", "category": "TD", "answer": "T", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "eller noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane und "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane und "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane und kontrolliere danach "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit."}]}, {"nodes": [{"t": "text", "v": "Sprich "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane langsam aus und schreibe danach "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane mit "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane und "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit, bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane ein und prüfe anschliessend "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane und schreibe danach "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane und "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du "}, {"t": "gap", "category": "PB", "answer": "B", "options": ["P", "B"], "blankLen": 2}, {"t": "text", "v": "anane und "}, {"t": "gap", "category": "TZZ", "answer": "Z", "options": ["Tz", "Z"], "blankLen": 2}, {"t": "text", "v": "eit noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " und Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " und Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " und kontrolliere danach Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Sprich Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " langsam aus und schreibe danach Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " mit Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " und Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": ", bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " ein und prüfe anschliessend Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " und schreibe danach Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " und Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du Kor"}, {"t": "gap", "category": "PB", "answer": "b", "options": ["p", "b"], "blankLen": 2}, {"t": "text", "v": " und Wi"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf und Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf und Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf und kontrolliere danach Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Sprich "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf langsam aus und schreibe danach Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf mit Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf und Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": ", bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf ein und prüfe anschliessend Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf und schreibe danach Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf und Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "orf und Ne"}, {"t": "gap", "category": "TZZ", "answer": "tz", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " noch einmal und korrigierst kleine Fehler."}]}, {"nodes": [{"t": "text", "v": "Heute üben wir die Wörter "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach und Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " im Heft."}]}, {"nodes": [{"t": "text", "v": "Schreibe "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach und Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " sauber auf und lies beide Wörter laut vor."}]}, {"nodes": [{"t": "text", "v": "Unterstreiche die schwierige Stelle in "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach und kontrolliere danach Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Sprich "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach langsam aus und schreibe danach Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " in die nächste Zeile."}]}, {"nodes": [{"t": "text", "v": "Vergleiche "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach mit Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " und achte auf die richtige Schreibweise."}]}, {"nodes": [{"t": "text", "v": "Wir wiederholen "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach und Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": ", bis die Wörter sicher sitzen."}]}, {"nodes": [{"t": "text", "v": "Setze die passenden Buchstaben in "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach ein und prüfe anschliessend Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "."}]}, {"nodes": [{"t": "text", "v": "Klatsche die Silben von "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach und schreibe danach Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " deutlich auf."}]}, {"nodes": [{"t": "text", "v": "In der Schule lernst du "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach und Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": "; nimm dir Zeit und arbeite genau."}]}, {"nodes": [{"t": "text", "v": "Am Schluss liest du "}, {"t": "gap", "category": "TD", "answer": "D", "options": ["T", "D"], "blankLen": 2}, {"t": "text", "v": "ach und Pil"}, {"t": "gap", "category": "TZZ", "answer": "z", "options": ["tz", "z"], "blankLen": 2}, {"t": "text", "v": " noch einmal und korrigierst kleine Fehler."}]}], "meta": {"sentence_count": 200, "gap_counts": {"KCK": 80, "IEI": 80, "TZZ": 80, "PB": 80, "TD": 80}, "gaps_per_sentence": 2}};
+</script>
+
+<script>
+const sentenceEl = document.getElementById("sentence");
+const nextBtn = document.getElementById("nextBtn");
+const overallStat = document.getElementById("overallStat");
+const statsBody = document.getElementById("statsBody");
+const progressPill = document.getElementById("progressPill");
+
+const setSelect = document.getElementById("setSelect");
+const loadSetBtn = document.getElementById("loadSetBtn");
+const fileInput = document.getElementById("fileInput");
+
+const CATEGORIES = BASE_DATA.categories;
+
+function shuffleInPlace(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* -----------------------------
+   Sets: built-in + user sets
+-------------------------------- */
+const STORAGE_KEY = "spelling_sets_v1";
+
+// Optional: load additional sets from the repo (GitHub Pages) via manifest at sets/index.json
+// Manifest format:
+// { "sets": [ { "id":"schule1", "name":"Schule 1", "file":"sets/schule1.txt" }, ... ] }
+async function loadRepoManifestSets() {
+  try {
+    const res = await fetch("sets/index.json", { cache: "no-store" });
+    if (!res.ok) return [];
+    const manifest = await res.json();
+    if (!manifest || !Array.isArray(manifest.sets)) return [];
+    const out = [];
+
+    for (const entry of manifest.sets) {
+      if (!entry || typeof entry.name !== "string") continue;
+      // allow manifest to omit file for informational entries
+      if (!entry.file || typeof entry.file !== "string") continue;
+
+      try {
+        const txtRes = await fetch(entry.file, { cache: "no-store" });
+        if (!txtRes.ok) continue;
+        const text = await txtRes.text();
+        const lines = text.split(/\r?\n/);
+
+        // Build set from txt, but keep id/name from manifest
+        const built = buildSetFromTxt(entry.name, lines);
+        if (!built.sentences.length) continue;
+
+        built.id = String(entry.id || ("repo_" + entry.name)).trim() || ("repo_" + Date.now());
+        built.name = entry.name;
+        built._source = "repo";
+        out.push(built);
+      } catch {
+        // ignore individual set load errors
+      }
+    }
+    return out;
+  } catch {
+    // Likely running as file:// (no fetch) or no manifest present
+    return [];
+  }
+}
+
+
+function loadStoredSets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // sanitize
+    return parsed.filter(s => s && typeof s.id === "string" && typeof s.name === "string" && Array.isArray(s.sentences));
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredSets(sets) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
+}
+
+const BUILTIN_SET = { id: "base", name: "Grund-Set (200)", sentences: BASE_DATA.sentences };
+
+let allSets = [BUILTIN_SET, ...loadStoredSets()];
+let currentSetId = BUILTIN_SET.id;
+
+/* -----------------------------
+   Sentence parsing for .txt sets
+   - Each line is one sentence.
+   - We automatically pick exactly 2 gaps (max 1 gap per word).
+-------------------------------- */
+
+const DIGRAPHS = [
+  { s: "ck", cat: "KCK", answer: "ck", options: ["k","ck"] },
+  { s: "ie", cat: "IEI", answer: "ie", options: ["ie","i"] },
+  { s: "tz", cat: "TZZ", answer: "tz", options: ["tz","z"] },
+];
+const SINGLE = [
+  { s: "k", cat: "KCK", answer: "k", options: ["k","ck"] },
+  { s: "i", cat: "IEI", answer: "i", options: ["ie","i"] },
+  { s: "z", cat: "TZZ", answer: "z", options: ["tz","z"] },
+  { s: "p", cat: "PB",  answer: "p", options: ["p","b"] },
+  { s: "b", cat: "PB",  answer: "b", options: ["p","b"] },
+  { s: "t", cat: "TD",  answer: "t", options: ["t","d"] },
+  { s: "d", cat: "TD",  answer: "d", options: ["t","d"] },
+];
+
+function applyCase(opt, origSpan) {
+  if (origSpan && origSpan[0] === origSpan[0].toUpperCase()) {
+    return opt[0].toUpperCase() + opt.slice(1);
+  }
+  return opt;
+}
+
+function tokenize(sentence) {
+  // Keep words and separators; words include German letters and ß.
+  // This allows "pro Wort max. 1 Lücke".
+  const re = /[A-Za-zÄÖÜäöüß]+|[^A-Za-zÄÖÜäöüß]+/g;
+  return sentence.match(re) || [];
+}
+
+function findCandidatesInWord(word) {
+  const low = word.toLowerCase();
+  const candidates = [];
+
+  // digraphs first
+  for (let i = 0; i < low.length - 1; i++) {
+    const two = low.slice(i, i+2);
+    const d = DIGRAPHS.find(x => x.s === two);
+    if (d) {
+      candidates.push({ start:i, len:2, cat:d.cat, answer:d.answer, options:d.options });
+      i++; // skip next char to avoid overlapping
+    }
+  }
+  // singles
+  for (let i = 0; i < low.length; i++) {
+    const one = low[i];
+    const s = SINGLE.find(x => x.s === one);
+    if (s) candidates.push({ start:i, len:1, cat:s.cat, answer:s.answer, options:s.options });
+  }
+
+  // Prefer candidates not at position 0 (word remains recognizable)
+  candidates.sort((a,b) => {
+    const aScore = (a.start === 0 ? 1 : 0) + (a.len === 1 ? 0.2 : 0);
+    const bScore = (b.start === 0 ? 1 : 0) + (b.len === 1 ? 0.2 : 0);
+    return aScore - bScore;
+  });
+  return candidates;
+}
+
+function buildWordNodes(word, cand) {
+  const before = word.slice(0, cand.start);
+  const orig = word.slice(cand.start, cand.start + cand.len);
+  const after = word.slice(cand.start + cand.len);
+
+  return [
+    { t:"text", v: before },
+    {
+      t:"gap",
+      category: cand.cat,
+      answer: applyCase(cand.answer, orig),
+      options: cand.options.map(o => applyCase(o, orig)),
+      blankLen: 2
+    },
+    { t:"text", v: after }
+  ];
+}
+
+function sentenceLineToNodes(line) {
+  const tokens = tokenize(line);
+  const wordInfos = [];
+
+  for (let ti = 0; ti < tokens.length; ti++) {
+    const tok = tokens[ti];
+    if (/^[A-Za-zÄÖÜäöüß]+$/.test(tok)) {
+      const cands = findCandidatesInWord(tok);
+      if (cands.length) wordInfos.push({ ti, word: tok, cands });
+    }
+  }
+
+  if (wordInfos.length < 2) return null;
+
+  // pick 2 different words; bias towards underrepresented categories in this set later (simple randomness here)
+  // Choose first word randomly among words with candidates, then second among remaining.
+  const w1 = wordInfos[Math.floor(Math.random() * wordInfos.length)];
+  let w2 = wordInfos[Math.floor(Math.random() * wordInfos.length)];
+  let guard = 0;
+  while (w2.ti === w1.ti && guard++ < 20) w2 = wordInfos[Math.floor(Math.random() * wordInfos.length)];
+
+  // Choose one candidate per word
+  const c1 = w1.cands[0 + Math.floor(Math.random() * Math.min(3, w1.cands.length))];
+  const c2 = w2.cands[0 + Math.floor(Math.random() * Math.min(3, w2.cands.length))];
+
+  // Build nodes
+  const nodes = [];
+  for (let ti = 0; ti < tokens.length; ti++) {
+    const tok = tokens[ti];
+    if (ti === w1.ti) nodes.push(...buildWordNodes(tok, c1));
+    else if (ti === w2.ti) nodes.push(...buildWordNodes(tok, c2));
+    else nodes.push({ t:"text", v: tok });
+  }
+
+  // Merge adjacent text nodes
+  const merged = [];
+  for (const n of nodes) {
+    if (merged.length && n.t === "text" && merged[merged.length-1].t === "text") merged[merged.length-1].v += n.v;
+    else merged.push(n);
+  }
+  return { nodes: merged };
+}
+
+function buildSetFromTxt(name, lines) {
+  const sentences = [];
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const obj = sentenceLineToNodes(line);
+    if (obj) sentences.push(obj);
+  }
+  return { id: "user_" + Date.now(), name, sentences };
+}
+
+/* -----------------------------
+   App State (current set)
+-------------------------------- */
+let DATA = { categories: CATEGORIES, sentences: BUILTIN_SET.sentences };
+let stats = null;
+let used = 0;
+let current = null;
+let gapsMeta = [];
+let solved = [];
+let correctCounted = [];
+let hadWrong = [];
+let countedAttempt = [];
+
+function resetStatsAndProgress() {
+  stats = { overall: { attempts: 0, correct: 0 }, perCat: {} };
+  const ampel = document.getElementById("ampel");
+  if (ampel) ampel.style.background = "#ddd";
+  for (const c of DATA.categories) stats.perCat[c.key] = { label: c.label, attempts: 0, correct: 0 };
+  used = 0;
+  current = null;
+  DATA._remaining = null;
+  overallStat.textContent = "";
+  statsBody.innerHTML = "";
+  progressPill.textContent = "Satz 0";
+}
+
+function pickNextSentence() {
+  if (!DATA._remaining || DATA._remaining.length === 0) DATA._remaining = shuffleInPlace([...DATA.sentences]);
+  return DATA._remaining.pop();
+}
+
+function blankHtml(len) { return "&nbsp;".repeat(Math.max(2, len)); }
+
+function renderSentence() {
+  current = pickNextSentence();
+  used++;
+
+  gapsMeta = [];
+  let gapIndex = 0;
+  let html = "";
+
+  for (const node of current.nodes) {
+    if (node.t === "text") {
+      html += escapeHtml(node.v);
+    } else if (node.t === "gap") {
+      const i = gapIndex++;
+      gapsMeta.push({ category: node.category, answer: node.answer, options: node.options, blankLen: node.blankLen });
+      html += `<span class="gapWrap" data-gap="${i}"><span class="blank" id="blank${i}">${blankHtml(node.blankLen)}</span><span class="choices" id="choices${i}">${node.options.map(opt => `<button class="choice" data-gap="${i}" data-opt="${escapeAttr(opt)}">${escapeHtml(opt)}</button>`).join("")}</span></span>`;
+    }
+  }
+
+  solved = Array(gapsMeta.length).fill(false);
+  correctCounted = Array(gapsMeta.length).fill(false);
+  hadWrong = Array(gapsMeta.length).fill(false);
+  countedAttempt = Array(gapsMeta.length).fill(false);
+  nextBtn.disabled = true;
+
+  progressPill.textContent = `Satz ${used}`;
+  sentenceEl.innerHTML = html;
+
+  sentenceEl.querySelectorAll("button.choice").forEach(btn => {
+    btn.addEventListener("click", () => onChoose(Number(btn.dataset.gap), btn.dataset.opt, btn));
+  });
+
+  updateStatsUI();
+}
+
+function onChoose(gapIndex, chosen, btn) {
+  const g = gapsMeta[gapIndex];
+  const catKey = g.category;
+
+  const firstAttemptThisClick = !countedAttempt[gapIndex];
+
+  if (!countedAttempt[gapIndex]) {
+    countedAttempt[gapIndex] = true;
+    stats.overall.attempts++;
+    stats.perCat[catKey].attempts++;
+  }
+
+  const choicesEl = document.getElementById(`choices${gapIndex}`);
+  choicesEl.querySelectorAll("button.choice").forEach(b => b.classList.remove("wrong","correct"));
+
+  const isCorrect = (chosen === g.answer);
+
+  if (isCorrect) {
+    btn.classList.add("correct");
+    solved[gapIndex] = true;
+
+    const blank = document.getElementById(`blank${gapIndex}`);
+    blank.textContent = g.answer;
+    blank.classList.add("done");
+
+    if (!correctCounted[gapIndex]) {
+      correctCounted[gapIndex] = true;
+      // Nur zählen, wenn es beim ersten Klick direkt richtig war
+      if (firstAttemptThisClick) {
+        stats.overall.correct++;
+        stats.perCat[catKey].correct++;
+      }
+    }
+    choicesEl.querySelectorAll("button.choice").forEach(b => b.disabled = true);
+  } else {
+    hadWrong[gapIndex] = true;
+    btn.classList.add("wrong");
+  }
+
+  nextBtn.disabled = !solved.every(Boolean);
+  updateStatsUI();
+}
+
+function updateStatsUI() {
+  const rate = stats.overall.attempts ? (stats.overall.correct / stats.overall.attempts) * 100 : 0;
+  overallStat.textContent = `Total: ${stats.overall.correct} richtig von ${stats.overall.attempts} Versuchen (${Math.round(rate)}%)`;
+  const ampel = document.getElementById("ampel");
+  if (ampel) {
+    if (rate >= 90) ampel.style.background = "#2e7d32";
+    else if (rate >= 60) ampel.style.background = "#f9a825";
+    else ampel.style.background = "#c62828";
+  }
+  statsBody.innerHTML = "";
+  for (const key of Object.keys(stats.perCat)) {
+    const s = stats.perCat[key];
+    const rate = s.attempts ? Math.round((s.correct / s.attempts) * 100) : 0;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${escapeHtml(s.label)}</td><td>${s.attempts}</td><td>${s.correct}</td><td>${rate}%</td>`;
+    statsBody.appendChild(tr);
+  }
+}
+
+function escapeHtml(str) { return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+function escapeAttr(str) { return String(str).replaceAll("&","&amp;").replaceAll('"',"&quot;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+/* -----------------------------
+   UI: set switching + load
+-------------------------------- */
+
+function refreshSetSelect() {
+  setSelect.innerHTML = "";
+  for (const s of allSets) {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name + (s.id === "base" ? "" : (s._source === "repo" ? " (Repo)" : " (lokal)"));
+    setSelect.appendChild(opt);
+  }
+  setSelect.value = currentSetId;
+}
+
+function switchToSet(id) {
+  const s = allSets.find(x => x.id === id);
+  if (!s) return;
+  currentSetId = id;
+  DATA = { categories: CATEGORIES, sentences: s.sentences };
+  resetStatsAndProgress();
+  renderSentence();
+}
+
+setSelect.addEventListener("change", () => switchToSet(setSelect.value));
+
+loadSetBtn.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files && fileInput.files[0];
+  fileInput.value = "";
+  if (!file) return;
+
+  const text = await file.text();
+  const lines = text.split(/\r?\n/);
+
+  const name = file.name.replace(/\.[^.]+$/, "");
+  const newSet = buildSetFromTxt(name, lines);
+
+  if (!newSet.sentences.length) {
+    alert("Keine verwendbaren Sätze gefunden. Hinweise:\n- Jede Zeile ein Satz\n- Mindestens zwei Wörter mit passenden Stellen (k/ck, ie/i, tz/z, p/b, t/d).");
+    return;
+  }
+
+  // Store (persist) and add
+  const stored = loadStoredSets();
+  stored.push(newSet);
+  saveStoredSets(stored);
+
+  // Update in-memory list
+  allSets = [BUILTIN_SET, ...stored];
+  currentSetId = newSet.id;
+  refreshSetSelect();
+  switchToSet(newSet.id);
+});
+
+nextBtn.addEventListener("click", renderSentence);
+
+/* init */
+(async () => {
+  const stored = loadStoredSets();
+  const repoSets = await loadRepoManifestSets(); // from sets/index.json (relative)
+  // Prefer: built-in, then repo sets, then stored (local) sets
+  allSets = [BUILTIN_SET, ...repoSets, ...stored];
+  currentSetId = BUILTIN_SET.id;
+  refreshSetSelect();
+  switchToSet(currentSetId);
+})();</script></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "sets": [
+    { "id": "schule1", "name": "Schule 1", "file": "sets/schule1.txt" },
+    { "id": "tiere", "name": "Tiere", "file": "sets/tiere.txt" }
+  ]
+}
