@@ -52,6 +52,8 @@
 }
 .blank.done{ border-bottom-color:#777; }
 .choices{
+  word-break: keep-all;
+  overflow-wrap: normal;
   position:absolute;
   left:50%;
   transform:translateX(-50%);
@@ -66,10 +68,28 @@
   z-index:5;
 }
 
-button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; 
-  white-space: nowrap;
+button.choice{
+  appearance:none;
+  border:1px solid #bbb;
+  background:#fff;
+  border-radius:12px;
+  padding:6px 10px;
+  font-size:14px;
+  line-height:1;
+  cursor:pointer;
+  user-select:none;
+
+  /* Prevent internal wrapping/breaking */
+  white-space:nowrap;
+  word-break:keep-all;
+  overflow-wrap:normal;
+  hyphens:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
 }
-    button.choice:disabled { cursor: not-allowed; opacity: .65; }
+
+button.choice:disabled { cursor: not-allowed; opacity: .65; }
     button.choice.correct { background: #e7f8ea; border-color: #2e7d32; color: #1b5e20; }
     button.choice.wrong { background: #fdeaea; border-color: #c62828; color: #8e0000; }
 
@@ -144,8 +164,8 @@ const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", 
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.4.0"; // bump when you update
-const BUILD_TIME = "2025-12-30T13:21:52Z";
+const APP_VERSION = "v2.4.1"; // bump when you update
+const BUILD_TIME = "2025-12-30T13:39:23Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
