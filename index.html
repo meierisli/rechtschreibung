@@ -234,12 +234,23 @@ function applyCase(opt, origSpan) {
   return opt;
 }
 
+
+// Wörter, die nicht für Abfragen verwendet werden sollen
+const STOP_WORDS = new Set([
+  "der","die","das","ein","eine","einer","einem","einen","eines",
+  "ich","du","er","sie","es","wir","ihr","sie",
+  "mein","meine","meiner","meinem","meinen",
+  "dein","deine","seiner","seine","ihre","unser","unsere",
+  "und","oder","aber","denn","auch","nur","noch","schon",
+  "in","im","am","auf","an","mit","von","für","bei","über","unter","nach","vor"
+]);
 function tokenize(sentence) {
   // Keep words and separators; words include German letters and ß.
   // This allows "pro Wort max. 1 Lücke".
   const re = /[A-Za-zÄÖÜäöüß]+|[^A-Za-zÄÖÜäöüß]+/g;
   return sentence.match(re) || [];
 }
+
 
 function findCandidatesInWord(word) {
   const low = word.toLowerCase();
@@ -251,7 +262,7 @@ function findCandidatesInWord(word) {
     const d = DIGRAPHS.find(x => x.s === two);
     if (d) {
       candidates.push({ start:i, len:2, cat:d.cat, answer:d.answer, options:d.options });
-      i++; // skip next char to avoid overlapping
+      i++;
     }
   }
   // singles
@@ -261,14 +272,12 @@ function findCandidatesInWord(word) {
     if (s) candidates.push({ start:i, len:1, cat:s.cat, answer:s.answer, options:s.options });
   }
 
-  // Prefer candidates not at position 0 (word remains recognizable)
-  candidates.sort((a,b) => {
-    const aScore = (a.start === 0 ? 1 : 0) + (a.len === 1 ? 0.2 : 0);
-    const bScore = (b.start === 0 ? 1 : 0) + (b.len === 1 ? 0.2 : 0);
-    return aScore - bScore;
-  });
-  return candidates;
+  if (!candidates.length) return [];
+
+  const nonStart = candidates.filter(c => c.start > 0);
+  return nonStart.length ? nonStart : candidates;
 }
+
 
 function buildWordNodes(word, cand) {
   const before = word.slice(0, cand.start);
@@ -294,9 +303,15 @@ function sentenceLineToNodes(line) {
 
   for (let ti = 0; ti < tokens.length; ti++) {
     const tok = tokens[ti];
+    
     if (/^[A-Za-zÄÖÜäöüß]+$/.test(tok)) {
+      const low = tok.toLowerCase();
+      if (STOP_WORDS.has(low)) continue;
+
       const cands = findCandidatesInWord(tok);
       if (cands.length) wordInfos.push({ ti, word: tok, cands });
+    }
+);
     }
   }
 
