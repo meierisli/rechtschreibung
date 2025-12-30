@@ -69,6 +69,7 @@
 <body>
   <h1>Rechtschreibung üben</h1>
   <div class="small" id="versionInfo" style="margin-top:2px;"></div>
+  <div id="errorBox" style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #c62828;border-radius:10px;background:#fdeaea;color:#8e0000;font-size:13px;"></div>
   <div class="small">Grund-Set mit 200 Sätzen. Du kannst zusätzliche Sets als .txt laden (jede Zeile ein Satz) und jederzeit wechseln.</div>
 
   <div class="card">
@@ -122,6 +123,21 @@ const versionInfo = document.getElementById("versionInfo");
 const APP_VERSION = "v2.1"; // bump when you update
 const BUILD_TIME = "2025-12-30";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
+
+function showError(msg) {
+  const box = document.getElementById("errorBox");
+  if (!box) return;
+  box.style.display = "block";
+  box.textContent = msg;
+}
+window.addEventListener("error", (e) => {
+  const msg = (e && e.message) ? e.message : "Unbekannter Fehler";
+  showError("Fehler: " + msg + " (bitte DevTools-Konsole prüfen)");
+});
+window.addEventListener("unhandledrejection", (e) => {
+  showError("Fehler: " + (e && e.reason ? String(e.reason) : "Promise-Rejection") + " (bitte DevTools-Konsole prüfen)");
+});
+
 
 const sentenceEl = document.getElementById("sentence");
 const nextBtn = document.getElementById("nextBtn");
@@ -558,6 +574,12 @@ nextBtn.addEventListener("click", renderSentence);
 
 /* init */
 (async () => {
+  try {
+    if (!BASE_DATA || !Array.isArray(BASE_DATA.sentences) || !BASE_DATA.sentences.length) {
+      showError('BASE_DATA fehlt oder enthält keine Sätze. Bitte sicherstellen, dass index.html vollständig hochgeladen wurde.');
+      return;
+    }
+
   const stored = loadStoredSets();
   const repoSets = await loadRepoManifestSets(); // from sets/index.json (relative)
   // Prefer: built-in, then repo sets, then stored (local) sets
@@ -565,6 +587,10 @@ nextBtn.addEventListener("click", renderSentence);
   currentSetId = BUILTIN_SET.id;
   refreshSetSelect();
   switchToSet(currentSetId);
-})();</script></script>
+  } catch (err) {
+    showError('Initialisierung fehlgeschlagen: ' + (err && err.message ? err.message : String(err)));
+  }
+})();
+</script></script>
 </body>
 </html>
