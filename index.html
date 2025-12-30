@@ -68,6 +68,7 @@
 </head>
 <body>
   <h1>Rechtschreibung üben</h1>
+  <div class="small" id="versionInfo" style="margin-top:2px;"></div>
   <div class="small">Grund-Set mit 200 Sätzen. Du kannst zusätzliche Sets als .txt laden (jede Zeile ein Satz) und jederzeit wechseln.</div>
 
   <div class="card">
@@ -117,6 +118,11 @@ const BASE_DATA = {"version": 12, "categories": [{"key": "KCK", "label": "k / ck
 </script>
 
 <script>
+const versionInfo = document.getElementById("versionInfo");
+const APP_VERSION = "v2.1"; // bump when you update
+const BUILD_TIME = "2025-12-30";
+if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
+
 const sentenceEl = document.getElementById("sentence");
 const nextBtn = document.getElementById("nextBtn");
 const overallStat = document.getElementById("overallStat");
@@ -147,7 +153,7 @@ const STORAGE_KEY = "spelling_sets_v1";
 // { "sets": [ { "id":"schule1", "name":"Schule 1", "file":"sets/schule1.txt" }, ... ] }
 async function loadRepoManifestSets() {
   try {
-    const res = await fetch("sets/index.json", { cache: "no-store" });
+    const res = await fetch(`sets/index.json?v=${encodeURIComponent(APP_VERSION)}`, { cache: "no-store" });
     if (!res.ok) return [];
     const manifest = await res.json();
     if (!manifest || !Array.isArray(manifest.sets)) return [];
@@ -159,7 +165,7 @@ async function loadRepoManifestSets() {
       if (!entry.file || typeof entry.file !== "string") continue;
 
       try {
-        const txtRes = await fetch(entry.file, { cache: "no-store" });
+        const txtRes = await fetch(`${entry.file}?v=${encodeURIComponent(APP_VERSION)}`, { cache: "no-store" });
         if (!txtRes.ok) continue;
         const text = await txtRes.text();
         const lines = text.split(/\r?\n/);
@@ -236,6 +242,8 @@ function applyCase(opt, origSpan) {
 
 
 // Wörter, die nicht für Abfragen verwendet werden sollen
+const MIN_WORD_LEN = 5;
+// Wörter, die nicht für Abfragen verwendet werden sollen
 const STOP_WORDS = new Set([
   "der","die","das","ein","eine","einer","einem","einen","eines",
   "ich","du","er","sie","es","wir","ihr","sie",
@@ -307,6 +315,7 @@ function sentenceLineToNodes(line) {
     if (/^[A-Za-zÄÖÜäöüß]+$/.test(tok)) {
       const low = tok.toLowerCase();
       if (STOP_WORDS.has(low)) continue;
+      if (tok.length < MIN_WORD_LEN) continue;
 
       const cands = findCandidatesInWord(tok);
       if (cands.length) wordInfos.push({ ti, word: tok, cands });
