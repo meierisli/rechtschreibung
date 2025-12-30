@@ -129,8 +129,8 @@ const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", 
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.3.1"; // bump when you update
-const BUILD_TIME = "2025-12-30T11:35:50Z";
+const APP_VERSION = "v2.3.2"; // bump when you update
+const BUILD_TIME = "2025-12-30T11:39:33Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
@@ -173,20 +173,13 @@ var STOP_WORDS = new Set([
   "in","im","am","auf","an","mit","von","für","bei","über","unter","nach","vor"
 ]);
 
-
-
-
-
-
-function shuffleInPlace(a) {
-  for (let i = a.length - 1;
-
 // Buchstaben-Kombinationen (vor allen Funktionen initialisieren)
 var DIGRAPHS = [
   { s: "ck", cat: "KCK", answer: "ck", options: ["k","ck"] },
   { s: "ie", cat: "IEI", answer: "ie", options: ["ie","i"] },
   { s: "tz", cat: "TZZ", answer: "tz", options: ["tz","z"] },
 ];
+
 var SINGLE = [
   { s: "k", cat: "KCK", answer: "k", options: ["k","ck"] },
   { s: "i", cat: "IEI", answer: "i", options: ["ie","i"] },
@@ -197,7 +190,14 @@ var SINGLE = [
   { s: "d", cat: "TD",  answer: "d", options: ["t","d"] },
 ];
 
- i > 0; i--) {
+
+
+
+
+
+
+function shuffleInPlace(a) {
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
