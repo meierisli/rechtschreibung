@@ -266,15 +266,6 @@ const SINGLE = [
   { s: "d", cat: "TD",  answer: "d", options: ["t","d"] },
 ];
 
-function applyCase(opt, origSpan) {
-  if (origSpan && origSpan[0] === origSpan[0].toUpperCase()) {
-    return opt[0].toUpperCase() + opt.slice(1);
-  }
-  return opt;
-}
-
-
-// Wörter, die nicht für Abfragen verwendet werden sollen
 const MIN_WORD_LEN = 5;
 // Wörter, die nicht für Abfragen verwendet werden sollen
 const STOP_WORDS = new Set([
@@ -285,6 +276,18 @@ const STOP_WORDS = new Set([
   "und","oder","aber","denn","auch","nur","noch","schon",
   "in","im","am","auf","an","mit","von","für","bei","über","unter","nach","vor"
 ]);
+
+
+
+function applyCase(opt, origSpan) {
+  if (origSpan && origSpan[0] === origSpan[0].toUpperCase()) {
+    return opt[0].toUpperCase() + opt.slice(1);
+  }
+  return opt;
+}
+
+
+// Wörter, die nicht für Abfragen verwendet werden sollen
 function tokenize(sentence) {
   // Keep words and separators; words include German letters and ß.
   // This allows "pro Wort max. 1 Lücke".
