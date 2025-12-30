@@ -333,8 +333,6 @@ function sentenceLineToNodes(line) {
       const cands = findCandidatesInWord(tok);
       if (cands.length) wordInfos.push({ ti, word: tok, cands });
     }
-);
-    }
   }
 
   if (wordInfos.length < 2) return null;
