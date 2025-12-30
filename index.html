@@ -25,10 +25,13 @@
 }
 
     
+
 .gapWrap {
-  display: inline;
-  position: relative;
-  margin: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: baseline;
+  margin: 0 0 18px 0;
   padding: 0;
 }
 
@@ -39,25 +42,22 @@
   margin: 0;
   font-weight: 700;
   letter-spacing: 0;
+  line-height: 1.1;
 }
 
 .blank.done { border-bottom-color: #777; }
 
 .choices {
-  z-index: 5;
-
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 1.8em;
   display: flex;
   gap: 6px;
-  margin: 0;
+  margin-top: 6px;
   padding: 0;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
 }
 
-    button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; }
+button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; }
     button.choice:disabled { cursor: not-allowed; opacity: .65; }
     button.choice.correct { background: #e7f8ea; border-color: #2e7d32; color: #1b5e20; }
     button.choice.wrong { background: #fdeaea; border-color: #c62828; color: #8e0000; }
@@ -133,8 +133,8 @@ const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", 
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.3.4"; // bump when you update
-const BUILD_TIME = "2025-12-30T11:57:17Z";
+const APP_VERSION = "v2.3.5"; // bump when you update
+const BUILD_TIME = "2025-12-30T12:32:07Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
@@ -326,6 +326,8 @@ function findCandidatesInWord(word) {
   // singles (skip indices already covered by a digraph)
   for (let i = 0; i < low.length; i++) {
     if (covered.has(i)) continue;
+    // Keine Abfrage einzelner Buchstaben aus Doppelbuchstaben (z.B. bb, tt)
+    if ((i > 0 && low[i] === low[i-1]) || (i + 1 < low.length && low[i] === low[i+1])) continue;
     const one = low[i];
     const s = SINGLE.find(x => x.s === one);
     if (s) candidates.push({ start:i, len:1, cat:s.cat, answer:s.answer, options:s.options });
