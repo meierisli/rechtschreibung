@@ -129,8 +129,8 @@ const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", 
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.2"; // bump when you update
-const BUILD_TIME = "2025-12-30";
+const APP_VERSION = "v2.3.1"; // bump when you update
+const BUILD_TIME = "2025-12-30T11:35:50Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
@@ -179,7 +179,25 @@ var STOP_WORDS = new Set([
 
 
 function shuffleInPlace(a) {
-  for (let i = a.length - 1; i > 0; i--) {
+  for (let i = a.length - 1;
+
+// Buchstaben-Kombinationen (vor allen Funktionen initialisieren)
+var DIGRAPHS = [
+  { s: "ck", cat: "KCK", answer: "ck", options: ["k","ck"] },
+  { s: "ie", cat: "IEI", answer: "ie", options: ["ie","i"] },
+  { s: "tz", cat: "TZZ", answer: "tz", options: ["tz","z"] },
+];
+var SINGLE = [
+  { s: "k", cat: "KCK", answer: "k", options: ["k","ck"] },
+  { s: "i", cat: "IEI", answer: "i", options: ["ie","i"] },
+  { s: "z", cat: "TZZ", answer: "z", options: ["tz","z"] },
+  { s: "p", cat: "PB",  answer: "p", options: ["p","b"] },
+  { s: "b", cat: "PB",  answer: "b", options: ["p","b"] },
+  { s: "t", cat: "TD",  answer: "t", options: ["t","d"] },
+  { s: "d", cat: "TD",  answer: "d", options: ["t","d"] },
+];
+
+ i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
@@ -266,21 +284,6 @@ let currentSetId = BUILTIN_SET.id;
    - Each line is one sentence.
    - We automatically pick exactly 2 gaps (max 1 gap per word).
 -------------------------------- */
-
-const DIGRAPHS = [
-  { s: "ck", cat: "KCK", answer: "ck", options: ["k","ck"] },
-  { s: "ie", cat: "IEI", answer: "ie", options: ["ie","i"] },
-  { s: "tz", cat: "TZZ", answer: "tz", options: ["tz","z"] },
-];
-const SINGLE = [
-  { s: "k", cat: "KCK", answer: "k", options: ["k","ck"] },
-  { s: "i", cat: "IEI", answer: "i", options: ["ie","i"] },
-  { s: "z", cat: "TZZ", answer: "z", options: ["tz","z"] },
-  { s: "p", cat: "PB",  answer: "p", options: ["p","b"] },
-  { s: "b", cat: "PB",  answer: "b", options: ["p","b"] },
-  { s: "t", cat: "TD",  answer: "t", options: ["t","d"] },
-  { s: "d", cat: "TD",  answer: "d", options: ["t","d"] },
-];
 
 function applyCase(opt, origSpan) {
   if (origSpan && origSpan[0] === origSpan[0].toUpperCase()) {
