@@ -12,6 +12,8 @@
       overflow: visible;
     
   overflow: visible;
+
+  overflow: visible;
 }
     .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     .spacer { flex: 1 1 auto; }
@@ -19,42 +21,50 @@
     .small { font-size: 12px; color: #555; }
 
     .sentence { font-size: 22px; line-height: 1.75; white-space: normal; overflow-wrap: anywhere; 
-      padding-bottom: 12px;
+      padding-bottom: 72px;
       
   margin-bottom: 16px;
 }
 
     
 
-.gapWrap {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  vertical-align: baseline;
-  margin: 0 0 18px 0;
-  padding: 0;
+
+.wordWrap{
+  display:inline-block;
+  position:relative;
+  margin:0;
+  padding:0;
 }
-
-.blank {
-  display: inline;
-  border-bottom: 3px solid #111;
-  padding: 0;
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.1;
+.gapWrap{
+  display:inline;
+  margin:0;
+  padding:0;
 }
-
-.blank.done { border-bottom-color: #777; }
-
-.choices {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  padding: 0;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 100%;
+.blank{
+  display:inline-block;
+  border-bottom:3px solid #111;
+  padding:0 0 2px;
+  margin:0;
+  font-weight:700;
+  letter-spacing:0;
+  line-height:1.1;
+  min-width:18px;
+  text-align:center;
+}
+.blank.done{ border-bottom-color:#777; }
+.choices{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:1.9em;
+  display:flex;
+  gap:6px;
+  margin:0;
+  padding:0;
+  flex-wrap:wrap;
+  justify-content:center;
+  max-width:min(260px, 80vw);
+  z-index:5;
 }
 
 button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; }
@@ -133,8 +143,8 @@ const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", 
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.3.5"; // bump when you update
-const BUILD_TIME = "2025-12-30T12:32:07Z";
+const APP_VERSION = "v2.3.6"; // bump when you update
+const BUILD_TIME = "2025-12-30T13:08:31Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
@@ -483,10 +493,32 @@ function renderSentence() {
   let gapIndex = 0;
   let html = "";
 
-  for (const node of current.nodes) {
+  for (let idx = 0; idx < current.nodes.length; idx++) {
+    const node = current.nodes[idx];
+
+    // Muster: Text + Gap + Text (Wortteile) => zusammen als wordWrap rendern,
+    // damit die Buttons die Wortabstände nicht beeinflussen.
+    if (node.t === "text" && idx + 2 < current.nodes.length && current.nodes[idx + 1].t === "gap" && current.nodes[idx + 2].t === "text") {
+      const before = node.v;
+      const gapNode = current.nodes[idx + 1];
+      const after = current.nodes[idx + 2];
+
+      const i = gapIndex++;
+      gapsMeta.push({ category: gapNode.category, answer: gapNode.answer, options: gapNode.options, blankLen: gapNode.blankLen });
+
+      html += `<span class="wordWrap">` + escapeHtml(before)
+           + `<span class="gapWrap" data-gap="${i}"><span class="blank" id="blank${i}">${blankHtml(gapNode.blankLen)}</span>`
+           + `<span class="choices" id="choices${i}">${gapNode.options.map(opt => `<button class="choice" data-gap="${i}" data-opt="${escapeAttr(opt)}">${escapeHtml(opt)}</button>`).join("")}</span></span>`
+           + escapeHtml(after) + `</span>`;
+
+      idx += 2;
+      continue;
+    }
+
     if (node.t === "text") {
       html += escapeHtml(node.v);
     } else if (node.t === "gap") {
+      // Fallback
       const i = gapIndex++;
       gapsMeta.push({ category: node.category, answer: node.answer, options: node.options, blankLen: node.blankLen });
       html += `<span class="gapWrap" data-gap="${i}"><span class="blank" id="blank${i}">${blankHtml(node.blankLen)}</span><span class="choices" id="choices${i}">${node.options.map(opt => `<button class="choice" data-gap="${i}" data-opt="${escapeAttr(opt)}">${escapeHtml(opt)}</button>`).join("")}</span></span>`;
@@ -500,11 +532,6 @@ function renderSentence() {
   nextBtn.disabled = true;
 
   progressPill.textContent = `Satz ${used}`;
-  // Sicherstellen: niemals zwei Lücken direkt nacheinander
-  if (html.includes('</span><span class="gapWrap"')) {
-    // erneut wählen
-    return renderSentence();
-  }
   sentenceEl.innerHTML = html;
 
   sentenceEl.querySelectorAll("button.choice").forEach(btn => {
