@@ -52,8 +52,6 @@
 }
 .blank.done{ border-bottom-color:#777; }
 .choices{
-  word-break: keep-all;
-  overflow-wrap: normal;
   position:absolute;
   left:50%;
   transform:translateX(-50%);
@@ -68,28 +66,10 @@
   z-index:5;
 }
 
-button.choice{
-  appearance:none;
-  border:1px solid #bbb;
-  background:#fff;
-  border-radius:12px;
-  padding:6px 10px;
-  font-size:14px;
-  line-height:1;
-  cursor:pointer;
-  user-select:none;
-
-  /* Prevent internal wrapping/breaking */
-  white-space:nowrap;
-  word-break:keep-all;
-  overflow-wrap:normal;
-  hyphens:none;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
+button.choice { padding: 7px 10px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; font-size: 15px; line-height: 1; 
+  white-space: nowrap;
 }
-
-button.choice:disabled { cursor: not-allowed; opacity: .65; }
+    button.choice:disabled { cursor: not-allowed; opacity: .65; }
     button.choice.correct { background: #e7f8ea; border-color: #2e7d32; color: #1b5e20; }
     button.choice.wrong { background: #fdeaea; border-color: #c62828; color: #8e0000; }
 
@@ -159,13 +139,13 @@ button.choice:disabled { cursor: not-allowed; opacity: .65; }
   </div>
 
 <script>
-const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Am frühen Morgen packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Heute Morgen packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Jeden Morgen packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Zu Beginn des Tages packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Gleich nach dem Aufstehen packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Vor der Schule packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Nach dem Aufwachen packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "An diesem Morgen packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten.", "Am Start des Tages packe ich meinen Rucksack und gehe zur Schule.", "Ich lese ein Buch und achte auf jedes Wort.", "Nach dem Frühstück ziehe ich meine Jacke an.", "Im Garten spiele ich mit einem Ball.", "Ich höre aufmerksam zu, wenn jemand spricht.", "Am Abend räume ich mein Zimmer auf.", "Ich schreibe langsam, damit alles gut lesbar ist.", "Wir gehen gemeinsam einen Weg entlang.", "Ich trinke Wasser, wenn ich durstig bin.", "Nach der Pause beginne ich wieder zu arbeiten."];
+const BASE_LINES = ["Am Morgen packe ich meinen Rucksack und gehe zur Schule.", "Auf dem Weg zur Schule achte ich auf den Verkehr.", "Im Klassenzimmer lege ich meine Hefte auf den Tisch.", "Ich schreibe das Datum oben auf das Blatt.", "Die Lehrerin erklärt die Aufgabe langsam und deutlich.", "Ich lese den Satz leise und dann noch einmal laut.", "Wenn ich etwas nicht verstehe, frage ich nach.", "In der Pause esse ich mein Znüni und trinke Wasser.", "Nach der Pause beginne ich ruhig mit der nächsten Aufgabe.", "Am Ende der Stunde räume ich meinen Platz auf.", "Zu Hause hänge ich meine Jacke an den Haken.", "Ich wasche meine Hände, bevor ich esse.", "Beim Frühstück decke ich den Tisch mit Teller und Besteck.", "Nach dem Essen räume ich das Geschirr in die Küche.", "Ich trinke ein Glas Wasser, wenn ich durstig bin.", "Am Nachmittag mache ich zuerst meine Hausaufgaben.", "Ich lese die Aufgaben genau, bevor ich beginne.", "Wenn ich fertig bin, kontrolliere ich meine Arbeit.", "Ich schreibe sorgfältig, damit alles gut lesbar ist.", "Danach mache ich eine kurze Pause und strecke mich.", "Ich spiele draussen und bleibe in der Nähe.", "Im Garten werfe ich einen Ball hin und her.", "Ich fahre mit dem Velo langsam um die Kurve.", "Beim Spielen halte ich mich an die Regeln.", "Wenn es kalt ist, ziehe ich eine Mütze an.", "Bei Regen nehme ich einen Regenschirm mit.", "Ich binde meine Schuhe fest, bevor ich losgehe.", "Im Wald bleibe ich auf dem Weg und schaue nach vorne.", "Ich höre die Vögel und sehe die Bäume im Wind.", "Wir gehen spazieren und sprechen leise miteinander.", "Im Park setze ich mich kurz auf eine Bank.", "Ich sammle Blätter und lege sie in eine Tasche.", "Zu Hause lege ich meine Sachen an ihren Platz.", "Ich räume mein Zimmer auf und sortiere die Spielsachen.", "Ich lege Bücher zurück ins Regal.", "Ich wische den Tisch ab, wenn er schmutzig ist.", "Ich helfe beim Kochen und schneide Gemüse klein.", "Wir rühren die Suppe langsam um, damit nichts anbrennt.", "Beim Backen messe ich Mehl und Zucker sorgfältig ab.", "Ich stelle ein Glas auf den Tisch, ohne es zu kippen.", "Am Abend dusche ich und ziehe den Pyjama an.", "Vor dem Schlafen putze ich meine Zähne gründlich.", "Ich lege mein Buch neben das Bett und mache das Licht aus.", "Ich höre eine Geschichte und werde ruhig.", "Am Wochenende besuchen wir Freunde oder Familie.", "Wir spielen ein Brettspiel und warten geduldig auf die Reihe.", "Ich werfe den Würfel und zähle die Punkte.", "Wenn ich verliere, bleibe ich fair und freundlich.", "Ich freue mich, wenn jemandem etwas gut gelingt.", "Ich sage danke, wenn mir jemand hilft.", "Ich öffne die Tür vorsichtig und halte sie fest.", "Ich trage ein Glas mit beiden Händen.", "Ich gehe langsam die Treppe hinauf und hinunter.", "Ich schaue, ob der Weg frei ist, bevor ich laufe.", "Wenn ich etwas fallen lasse, hebe ich es wieder auf.", "Ich halte Ordnung in meiner Schublade.", "Ich schreibe eine Einkaufsliste und hake alles ab.", "Im Laden wähle ich Obst und Gemüse aus.", "Ich zahle an der Kasse und packe alles ein.", "Zu Hause stelle ich die Einkäufe in den Schrank.", "Ich fülle eine Flasche mit Wasser und schraube den Deckel zu.", "Ich male ein Bild und benutze viele Farben.", "Ich klebe ein Blatt ins Heft und drücke es fest an.", "Mit dem Lineal ziehe ich eine gerade Linie.", "Ich schneide Papier langsam mit der Schere.", "Ich falte das Blatt sorgfältig in der Mitte.", "Ich schreibe einen kurzen Brief und unterschreibe meinen Namen.", "Ich lerne neue Wörter und spreche sie deutlich aus.", "Ich klatsche Silben und höre auf die Laute.", "Beim Lesen halte ich den Finger unter die Zeile.", "Ich verbessere Fehler und schreibe das Wort richtig auf.", "Im Turnunterricht wärme ich mich zuerst auf.", "Ich springe über eine Linie und lande sicher.", "Ich werfe einen Ball und fange ihn wieder.", "Wir laufen eine Runde und atmen ruhig.", "Nach dem Sport trinke ich Wasser und ruhe mich aus.", "Ich ziehe meine Turnschuhe aus und stelle sie ordentlich hin.", "Ich helfe einem Freund, wenn er etwas sucht.", "Wir teilen Stifte und Papier ohne Streit.", "Ich höre zu, wenn jemand etwas erzählt.", "Ich spreche höflich und benutze freundliche Worte.", "Wenn ich wütend bin, atme ich tief ein und aus.", "Ich zähle bis zehn und werde wieder ruhig.", "Ich lege mein Handy weg, wenn ich lernen will.", "Ich stelle einen Timer und beginne konzentriert.", "Nach einiger Zeit mache ich eine Pause und trinke Wasser.", "Ich schaue auf die Uhr und plane den Nachmittag.", "Ich lege die Kleidung für morgen bereit.", "Ich hänge nasse Sachen zum Trocknen auf.", "Ich packe meine Sporttasche und prüfe alles.", "Bevor ich gehe, schaue ich noch einmal nach meinen Sachen.", "Ich schliesse die Tür leise hinter mir.", "Im Bus sitze ich ruhig und halte mich fest.", "Ich steige an der richtigen Haltestelle aus.", "Zu Hause begrüsse ich alle freundlich.", "Am Schluss freue ich mich über einen guten Tag.", "Ich hänge meinen Schlüssel an den Schlüsselhaken, damit ich ihn wieder finde.", "Ich stelle meine Trinkflasche in den Rucksack, bevor ich losgehe.", "Wenn ich etwas verschütte, wische ich es sofort mit einem Tuch auf.", "Ich lüfte kurz das Zimmer und schliesse dann das Fenster wieder."];
 </script>
 
 <script>
 const versionInfo = document.getElementById("versionInfo");
-const APP_VERSION = "v2.4.1"; // bump when you update
-const BUILD_TIME = "2025-12-30T13:39:23Z";
+const APP_VERSION = "v2.4.2"; // bump when you update
+const BUILD_TIME = "2025-12-31T08:11:09Z";
 if (versionInfo) versionInfo.textContent = `Version: ${APP_VERSION} (${BUILD_TIME})`;
 const statusInfo = document.getElementById("statusInfo");
 function setStatus(msg){ if(statusInfo) statusInfo.textContent = msg; }
@@ -443,6 +423,7 @@ function sentenceLineToNodes(line) {
 }
 
 function buildSetFromTxt(name, lines) {
+  const seenLines = new Set();
   const sentences = [];
   for (const rawLine of lines) {
     const line = rawLine.trim();
